@@ -267,8 +267,8 @@ namespace Leorik.Search
             PlayState playState = new(moveGen.CollectMove(bestMove));
             while (Play(ply, ref playState, ref moveGen))
             {
-                //skip late quiet moves when almost in Qsearch depth
-                if (!inCheck && playState.Stage == Stage.Quiets && remaining <= 2 && alpha == beta - 1)
+                //if not PV skip late quiet moves when almost in Qsearch depth (aka late-razoring)
+                if (!inCheck && isNullWindow && remaining <= 2 && playState.Stage == Stage.Quiets)
                     return alpha;
 
                 ref Move move = ref Moves[playState.Next - 1];
