@@ -131,6 +131,18 @@ namespace Leorik.Search
             return Math.Clamp(eval + corr, -range, range);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int GetAdjustedStaticEval(BoardState board, Color side)
+        {
+            int stm = (side == Color.Black) ? 1 : 0;
+
+            int eval = board.Score(side);
+            int corr = GetCorrection(board, stm);
+
+            const int range = Evaluation.CheckmateBase - 1;
+            return Math.Clamp(eval + corr, -range, range);
+        }
+
         private int GetCorrection(BoardState board, int stm)
         {
             //Pawns->Knights->Bishops->Rooks->Queens->Kings;
@@ -166,6 +178,55 @@ namespace Leorik.Search
         {
             int index = (int)(bits % CORR_TABLE) + offset * CORR_TABLE;
             return Corrections[index].Get();
+        }
+
+        struct Accumulator
+        {
+            public int N;
+            public double Mean;
+            public double M2;
+           
+            public double StdDev => Math.Sqrt(M2 / N);
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Push(double x)
+            {
+                N++;
+                double delta = x - Mean;
+                Mean += delta / N;
+                double delta2 = x - Mean;
+                M2 += delta * delta2;
+            }
+
+            public Accumulator(double stdDev, int virtualSamples)
+            {
+                int n = Math.Max(2, virtualSamples);
+                N = n;
+                Mean = 0;
+                double s2 = stdDev * stdDev;
+                M2 = s2 * n;
+            }
+        }
+
+        private Accumulator _black = new Accumulator(Evaluation.NORMALIZE_TO_PAWN_VALUE, 20);
+        private Accumulator _white = new Accumulator(Evaluation.NORMALIZE_TO_PAWN_VALUE, 20);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public int EstimateQuietImprovementUpperBound(Color sideToMove, float stdDevs)
+        {
+            if (sideToMove == Color.White)
+                return (int)(_white.Mean + stdDevs * _white.StdDev);
+            else
+                return (int)(_black.Mean + stdDevs * _black.StdDev);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void RecordQuietImprovement(Color sideToMove, int improvement)
+        {
+            if (sideToMove == Color.White)
+                _white.Push(improvement);
+            else
+                _black.Push(improvement);
         }
     }
 }

@@ -5,6 +5,8 @@ namespace Leorik.Core
 {
     public struct Evaluation
     {
+        public const int NORMALIZE_TO_PAWN_VALUE = 306;
+
         public const int CheckmateBase = 9000;
         public const int CheckmateScore = 9999;
         public const int ScoreBounds = 10000;

@@ -10,7 +10,6 @@ namespace Leorik.Search
         private const int MAX_MOVES = 225; //https://www.stmintz.com/ccc/index.php?id=425058
         private const int ASPIRATION_WINDOW = 40;
         private const float HISTORY_SCALE = 1.5f;
-        private const int NORMALIZE_TO_PAWN_VALUE = 306;
 
         private readonly Move[] RootMoves;
         private readonly BoardState[] Positions;
@@ -173,7 +172,7 @@ namespace Leorik.Search
 
             //Drop into QSearch
             if (remaining <= 0)
-                return EvaluateQuiet(ply, alpha, beta, moveGen);
+                return EvaluateQuiescence(ply, alpha, beta, moveGen);
 
             TruncatePV(ply);
 
@@ -197,20 +196,31 @@ namespace Leorik.Search
             if (Aborted)
                 return score;
 
-            //Update correction history!
-            int staticEval = _history.GetAdjustedStaticEval(current);
-            int delta = score - staticEval;
-            if ((bm.CapturedPiece() == Piece.None) && //Best move either does not exist or is not a capture
-                !IsCheckmate(score) &&                //checkmate scores are excluded!
-                !(score <= alpha && delta > 0) &&     //fail-lows should not cause positive adjustment
-                !(score >= beta && delta < 0) &&      //fail-highs should not cause negative adjustment
-                !current.InCheck())                   //exclude positons that are in check!
-            {
-                _history.UpdateCorrection(current, remaining, delta);
-            }
-
             //Update transposition table
             Transpositions.Store(hash, remaining, ply, alpha, beta, score, bm);
+
+            //No history updates for captures, positions in check and mate scores
+            if (bm.CapturedPiece() != Piece.None || IsCheckmate(score) || current.InCheck())
+                return score;
+
+            int staticEval = _history.GetAdjustedStaticEval(current);
+
+            //Update statistics on good quiet moves
+            if (score > alpha && bm != default && remaining <= 2)
+            {
+                BoardState next = Positions[ply + 1];
+                next.Play(current, ref bm);
+                int nextStaticEval = _history.GetAdjustedStaticEval(next, current.SideToMove);
+                if (nextStaticEval > staticEval)
+                    _history.RecordQuietImprovement(current.SideToMove, nextStaticEval - staticEval);
+            }
+
+            //Update correction history!
+            if (!(score <= alpha && score > staticEval) &&     //fail-lows should not cause positive adjustment
+                !(score >= beta && score < staticEval))        //fail-highs should not cause negative adjustment
+            {
+                _history.UpdateCorrection(current, remaining, score - staticEval);
+            }
 
             return score;
         }
@@ -222,13 +232,24 @@ namespace Leorik.Search
             BoardState current = Positions[ply];
             BoardState next = Positions[ply + 1];
             bool inCheck = current.InCheck();
+            bool isNullWindow = beta <= alpha + 1;
             int staticEval = _history.GetAdjustedStaticEval(current);
 
+            //if we can't expect our last quiet move to make a reasonable difference we go into QSearch directly (aka Razoring)
+            if (!inCheck && isNullWindow && remaining <= 2 && !IsCheckmate(alpha))
+            {
+                //const float P85 = 1.04f, P90 = 1.28f, P95 = 1.64f, P98 = 2.05f, P99 = 2.33f;
+                const float P98 = 2.05f;
+                int razorMargin = _history.EstimateQuietImprovementUpperBound(current.SideToMove, P98);
+                if (staticEval <= alpha - razorMargin)
+                    return EvaluateQuiescence(ply, alpha, beta, moveGen);
+            }
+
             //consider null move pruning first
-            if (!inCheck && staticEval > beta && beta <= alpha + 1 && !current.IsEndgame())
+            if (!inCheck && isNullWindow && staticEval > beta && !current.IsEndgame() && !IsCheckmate(beta))
             {
                 int R = 2 + 2 * (remaining / 4);
-                //if remaining is [1..5] a nullmove reduction of 4 will mean it goes directly into Qsearch. Skip the effort for obvious situations...
+                //if remaining is [1..5] a nullmove reduction of 4 will mean it goes directly into Qsearch. Skip the effort for obvious situations... (aka RFP)
                 if (remaining <= R + 1 && _history.IsExpectedFailHigh(staticEval, beta))
                     return beta;
 
@@ -298,7 +319,7 @@ namespace Leorik.Search
             return alpha;
         }
 
-        private int EvaluateQuiet(int ply, int alpha, int beta, MoveGen moveGen)
+        private int EvaluateQuiescence(int ply, int alpha, int beta, MoveGen moveGen)
         {
             NodesVisited++;
 
@@ -337,7 +358,7 @@ namespace Leorik.Search
                 if (next.QuickPlay(current, ref Moves[i]))
                 {
                     movesPlayed = true;
-                    int score = -EvaluateQuiet(ply + 1, -beta, -alpha, moveGen);
+                    int score = -EvaluateQuiescence(ply + 1, -beta, -alpha, moveGen);
 
                     if (score >= beta)
                         return beta;
@@ -356,7 +377,7 @@ namespace Leorik.Search
                 if (next.QuickPlay(current, ref Moves[i]))
                 {
                     movesPlayed = true;
-                    int score = -EvaluateQuiet(ply + 1, -beta, -alpha, moveGen);
+                    int score = -EvaluateQuiescence(ply + 1, -beta, -alpha, moveGen);
 
                     if (score >= beta)
                         return beta;

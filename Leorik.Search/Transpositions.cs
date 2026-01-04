@@ -191,7 +191,7 @@ namespace Leorik.Search
                 //3.) we don't know the score but that's okay if it is <= alpha
                 case ScoreType.LessOrEqual:
                     return score <= alpha;
-                //1.) score is exact and within window
+                //1.) score is exact
                 default: //ScoreType.Exact
                     return true;
             }
