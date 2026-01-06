@@ -183,7 +183,7 @@ namespace Leorik.Core
             //for (int i = 0; i < accu.Length; i++)
             //    accu[i] += featureWeights[offset + i];
 
-            Span<Vector256<short>> accuVectors = MemoryMarshal.Cast<short, Vector256<short>>(accu);
+            Span<Vector256<short>> accuVectors = MemoryMarshal.Cast<short, Vector256<short>>(accu.AsSpan());
             Span<Vector256<short>> weightsVectors = MemoryMarshal.Cast<short, Vector256<short>>(weights);
             for (int i = 0; i < accuVectors.Length; i++)
                 accuVectors[i] += weightsVectors[i];
@@ -201,7 +201,7 @@ namespace Leorik.Core
             //for (int i = 0; i < accu.Length; i++)
             //    accu[i] -= featureWeights[offset + i];
 
-            Span<Vector256<short>> accuVectors = MemoryMarshal.Cast<short, Vector256<short>>(accu);
+            Span<Vector256<short>> accuVectors = MemoryMarshal.Cast<short, Vector256<short>>(accu.AsSpan());
             Span<Vector256<short>> weightsVectors = MemoryMarshal.Cast<short, Vector256<short>>(weights);
             for (int i = 0; i < accuVectors.Length; i++)
                 accuVectors[i] -= weightsVectors[i];
@@ -240,9 +240,9 @@ namespace Leorik.Core
 
             Vector256<short> ceil = Vector256.Create<short>(Network.QA);
             Vector256<short> floor = Vector256.Create<short>(0);
-            
-            Span<Vector256<short>> accuVectors = MemoryMarshal.Cast<short, Vector256<short>>(accu);
-            Span<Vector256<short>> weightsVectors = MemoryMarshal.Cast<short, Vector256<short>>(weights);
+
+            ReadOnlySpan<Vector256<short>> accuVectors = MemoryMarshal.Cast<short, Vector256<short>>(accu);
+            ReadOnlySpan<Vector256<short>> weightsVectors = MemoryMarshal.Cast<short, Vector256<short>>(weights);
             
             Vector256<int> sum = Vector256<int>.Zero;
             for (int i = 0; i < accuVectors.Length; i++)
