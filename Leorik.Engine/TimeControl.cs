@@ -8,7 +8,7 @@ namespace Leorik.Engine
         const int BASE_MARGIN = 5;
         const int MAX_TIME = int.MaxValue / 3; //large but not too large to cause overflow issues
         const float PLAY_ON_INC = 0.5f;
-        const float PLAY_ON_RESERVE = 0.85f;
+        const float PLAY_ON_RESERVE = 0.9f;
 
         private bool _pondering = false;
         private int _moveTime;
@@ -51,15 +51,23 @@ namespace Leorik.Engine
 
         internal void Go(int maxDepth, int time, int increment, int movesToGo, bool pondering)
         {
+            time = Math.Clamp(time, 1, MAX_TIME);
+            movesToGo = Math.Max(1, movesToGo);
+
             _pondering = pondering;
             _t0 = Now;
             _maxDepth = maxDepth;
+            
             int futureMoves = movesToGo - 1;
-            int timeRemaining = Math.Min(time, MAX_TIME) + futureMoves * increment;
+            int incTime = increment * futureMoves;
+            int timeRemaining = time + incTime;
+
             _moveTime = Math.Min(time, timeRemaining / movesToGo);
-            //abort as soon as the remaining moves have each less than 'reserve_ratio' of this one
-            float reserveRatio = increment > 50 ? PLAY_ON_INC : PLAY_ON_RESERVE;
-            int reserve = (int)(futureMoves * _moveTime * reserveRatio);
+
+            //abort as soon as the time left for each remaining move is less than 'reserve_ratio' of this one
+            float incRatio = Math.Clamp((float)incTime / time, 0f, 1f);
+            float reserveRatio = PLAY_ON_RESERVE + (PLAY_ON_INC - PLAY_ON_RESERVE) * incRatio;
+            int reserve = (int)(reserveRatio * futureMoves * _moveTime);
             _moveTimeLimit = Math.Min(time, timeRemaining - reserve);
         }
 
