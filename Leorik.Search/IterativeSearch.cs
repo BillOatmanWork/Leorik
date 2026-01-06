@@ -210,7 +210,7 @@ namespace Leorik.Search
             {
                 BoardState next = Positions[ply + 1];
                 next.Play(current, ref bm);
-                int nextStaticEval = _history.GetAdjustedStaticEval(next, current.SideToMove);
+                int nextStaticEval = -_history.GetAdjustedStaticEval(next);
                 if (nextStaticEval > staticEval)
                     _history.RecordQuietImprovement(current.SideToMove, nextStaticEval - staticEval);
             }

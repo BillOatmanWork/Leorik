@@ -131,18 +131,6 @@ namespace Leorik.Search
             return Math.Clamp(eval + corr, -range, range);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int GetAdjustedStaticEval(BoardState board, Color side)
-        {
-            int stm = (side == Color.Black) ? 1 : 0;
-
-            int eval = board.Score(side);
-            int corr = GetCorrection(board, stm);
-
-            const int range = Evaluation.CheckmateBase - 1;
-            return Math.Clamp(eval + corr, -range, range);
-        }
-
         private int GetCorrection(BoardState board, int stm)
         {
             //Pawns->Knights->Bishops->Rooks->Queens->Kings;
