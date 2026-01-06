@@ -4,8 +4,7 @@
 </p>
 
 Unshackled from the constraints of minimalism and simplicity **Leorik** is the successor to my bare-bones chess engine [MinimalChess](https://github.com/lithander/MinimalChessEngine).
-
-It plays Standard and Chess960/Fischer Random at 3400 strength.
+It plays Standard and Chess960/Fischer Random at superhuman strength.
 
 ## Features
 * Pseudo-legal move generator, bitboards and copy/make.
@@ -19,7 +18,8 @@ It plays Standard and Chess960/Fischer Random at 3400 strength.
 * Network trained on selfplay games using [Bullet](https://github.com/jw1912/bullet)
 * Lockfree Transposition Table with two buckets and aging
 * Principal Variation Search (PVS)
-  - search first/best move at full depth with full window, other via null-window first
+  - search first move at full depth with a full window,
+  - others moves need to beat alpha in a reduced null-window probe first
 * Pruning
   - Null move pruning
     - reduction based on remaining depth
@@ -30,9 +30,8 @@ It plays Standard and Chess960/Fischer Random at 3400 strength.
   - Late Move Reductions (LMR)
     - reduce late quiet moves
     - extra reductions based on static eval and SEE
-    - if reduced null-window search fails, skip full depth search
   - Mate distance pruning
-* Staged Move Generation
+* Staged Move Ordering
   - Best Hashmove
   - MVV-LVA sorted captures
   - Killer, Continuations
@@ -55,7 +54,7 @@ It plays Standard and Chess960/Fischer Random at 3400 strength.
 [3276 Elo](https://computerchess.org.uk/ccrl/404/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Leorik%203.0%2064-bit#Leorik_3_0_64-bit) CCRL Blitz and [3227 Elo](https://computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?print=Details&each_game=0&eng=Leorik%203.0%2064-bit#Leorik_3_0_64-bit) CCRL 40/15 rating.
 
 ### Leorik 2.5
-[__Version 2.5__](https://github.com/lithander/Leorik/releases/tag/2.5) now employs a faster move generator based on PEXT by default. PSQTs were replaced with linear functions that calculate the piece-square values using 18 parameters reflecting the positions of both kings and the game phase. To compute these values at a high speed the engine uses AVX2. Leorik now supports the 'Threads' UCI option. Each thread searches independentaly ("Lazy SMP") but can share information with other threads through the lockless transposition table.
+[__Version 2.5__](https://github.com/lithander/Leorik/releases/tag/2.5) now employs a faster move generator based on PEXT by default. PSQTs were replaced with linear functions that calculate the piece-square values using 18 parameters reflecting the positions of both kings and the game phase. To compute these values at a high speed the engine uses AVX2. Leorik now supports the 'Threads' UCI option. Each thread searches independently ("Lazy SMP") but can share information with other threads through the lockless transposition table.
 This is also the first version that is published under the permissive **MIT open-source license**.
 
 [2921 Elo](https://computerchess.org.uk/ccrl/404/cgi/engine_details.cgi?print=Details&each_game=1&eng=Leorik%202.5%2064-bit#Leorik_2_5_64-bit) CCRL Blitz and [2922 Elo](https://computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?match_length=30&each_game=0&print=Details&each_game=0&eng=Leorik%202.5%2064-bit#Leorik_2_5_64-bit)  CCRL 40/15 rating.
@@ -67,7 +66,7 @@ This is also the first version that is published under the permissive **MIT open
 
 ### Leorik 2.3
 [__Version 2.3__](https://github.com/lithander/Leorik/releases/tag/2.3) replaces all previously handcrafted evaluation terms with tunable weights and all weights are tuned from scratch on selfplay games.
-The first batch of games was played with a version that only knew basic piece material values. On these games a new set of weights was tuned making the selfplay stronger. After half a dozen generations Leorik surpassed it's old playing strength.
+The first batch of games was played with a version that only knew basic piece material values. On these games a new set of weights was tuned making the selfplay stronger. After half a dozen generations Leorik surpassed its old playing strength.
 There have also been a few bugfixes and tweaks to existing functionality like an improved Move-History. 
 
 [2677 Elo](http://computerchess.org.uk/ccrl/404/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Leorik%202.3%2064-bit#Leorik_2_3_64-bit) CCRL Blitz and [2736 Elo](http://computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?print=Details&each_game=0&eng=Leorik%202.3%2064-bit#Leorik_2_3_64-bit) CCRL 40/15 rating.
@@ -86,7 +85,7 @@ There have also been a few bugfixes and tweaks to existing functionality like an
 [2537 Elo](https://computerchess.org.uk/ccrl/404/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Leorik%202.0.2%2064-bit#Leorik_2_0_2_64-bit) CCRL Blitz and [2529 Elo](https://computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Leorik%202.0%2064-bit#Leorik_2_0_64-bit) CCRL 40/15 rating.
 
 ### Leorik 1.0
-[__Version 1.0__](https://github.com/lithander/Leorik/releases/tag/1.0) combines a pretty fast move generator, copy&make and incremental updates of the Zobrist key and the PST based evaluation to search several million nodes per second. The search does not implement any unsafe pruning techniques or reductions and so it suffers from a high branching factor and remains quite shallow even at higher time controls. But it solves all mate puzzle with the shortest path.
+[__Version 1.0__](https://github.com/lithander/Leorik/releases/tag/1.0) combines a pretty fast move generator, copy&make and incremental updates of the Zobrist key and the PST based evaluation to search several million nodes per second. The search does not implement any unsafe pruning techniques or reductions and so it suffers from a high branching factor and remains quite shallow even at higher time controls. But it solves all mate puzzles with the shortest path.
 [2112 Elo](https://computerchess.org.uk/ccrl/404/cgi/engine_details.cgi?eng=Leorik%201.0%2064-bit#Leorik_1_0_64-bit) on the CCRL Blitz list.
 
 ## How to play
